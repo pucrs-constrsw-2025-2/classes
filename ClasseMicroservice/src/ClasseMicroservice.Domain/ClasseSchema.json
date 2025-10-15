@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Classe",
+  "type": "object",
+  "properties": {
+    "_id": {
+      "type": "string"
+    },
+    "class_number": {
+      "type": "string"
+    },
+    "year": {
+      "type": "integer"
+    },
+    "semester": {
+      "type": "integer"
+    },
+    "schedule": {
+      "type": "string"
+    },
+    "exams": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Exam"
+      }
+    },
+    "students": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Student"
+      }
+    },
+    "professors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Professor"
+      }
+    },
+    "course": {
+      "$ref": "#/definitions/Course"
+    }
+  },
+  "required": ["_id", "class_number", "year", "semester", "schedule", "course"],
+  "definitions": {
+    "Exam": {
+      "type": "object",
+      "properties": {
+        "exam_name": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": ["exam_name", "date"]
+    },
+    "Student": {
+      "type": "object",
+      "properties": {
+        "student_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["student_id", "name"]
+    },
+    "Professor": {
+      "type": "object",
+      "properties": {
+        "professor_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["professor_id", "name"]
+    },
+    "Course": {
+      "type": "object",
+      "properties": {
+        "course_id": {
+          "type": "string"
+        },
+        "course_name": {
+          "type": "string"
+        }
+      },
+      "required": ["course_id", "course_name"]
+    }
+  }
+}

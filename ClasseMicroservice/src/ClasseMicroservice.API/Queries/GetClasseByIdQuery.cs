@@ -1,11 +1,2 @@
-namespace ClasseMicroservice.API.Queries
-{
-    public class GetClassByIdQuery
-    {
-        public string Id { get; set; }
-        public GetClassByIdQuery(string id)
-        {
-            Id = id;
-        }
-    }
-}
+// Alias para o tipo definido na camada Application.
+global using GetClassByIdQuery = ClasseMicroservice.Application.Queries.GetClassByIdQuery;

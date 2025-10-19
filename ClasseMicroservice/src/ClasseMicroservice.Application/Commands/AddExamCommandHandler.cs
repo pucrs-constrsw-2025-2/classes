@@ -14,7 +14,11 @@ namespace ClasseMicroservice.Application.Commands
 
         public async Task HandleAsync(AddExamCommand command)
         {
-            await _examRepository.AddExamToClassAsync(command.ClassId, command.Exam);
+            var exam = command.Exam;
+            if (exam != null && string.IsNullOrWhiteSpace(exam.Id))
+                exam.Id = System.Guid.NewGuid().ToString();
+
+            await _examRepository.AddExamToClassAsync(command.ClassId, exam);
         }
     }
 }

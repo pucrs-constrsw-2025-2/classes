@@ -1,6 +1,9 @@
 using MongoDB.Driver;
+using MongoDB.Bson;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using ClasseMicroservice.Domain.Entities;
 
 namespace ClasseMicroservice.API.Data
 {
@@ -17,18 +20,18 @@ namespace ClasseMicroservice.API.Data
         public async Task EnsureCollectionsAndIndexesAsync()
         {
             // Ensure collections
-            await EnsureCollectionExistsAsync<Models.Class>("Classes");
-            await EnsureCollectionExistsAsync<Models.Exam>("Exams");
-            await EnsureCollectionExistsAsync<Models.Student>("Students");
-            await EnsureCollectionExistsAsync<Models.Professor>("Professors");
-            await EnsureCollectionExistsAsync<Models.Course>("Courses");
+            await EnsureCollectionExistsAsync<Class>("Classes");
+            await EnsureCollectionExistsAsync<Exam>("Exams");
+            await EnsureCollectionExistsAsync<Student>("Students");
+            await EnsureCollectionExistsAsync<Professor>("Professors");
+            await EnsureCollectionExistsAsync<Course>("Courses");
 
             // Basic indexes
-            await EnsureIndexAsync<Models.Class>("Classes", Builders<Models.Class>.IndexKeys.Ascending(c => c.Id));
-            await EnsureIndexAsync<Models.Exam>("Exams", Builders<Models.Exam>.IndexKeys.Ascending(e => e.Id));
-            await EnsureIndexAsync<Models.Student>("Students", Builders<Models.Student>.IndexKeys.Ascending(s => s.Id));
-            await EnsureIndexAsync<Models.Professor>("Professors", Builders<Models.Professor>.IndexKeys.Ascending(p => p.Id));
-            await EnsureIndexAsync<Models.Course>("Courses", Builders<Models.Course>.IndexKeys.Ascending(c => c.Id));
+            await EnsureIndexAsync<Class>("Classes", Builders<Class>.IndexKeys.Ascending(c => c.Id));
+            await EnsureIndexAsync<Exam>("Exams", Builders<Exam>.IndexKeys.Ascending(e => e.Id));
+            await EnsureIndexAsync<Student>("Students", Builders<Student>.IndexKeys.Ascending(s => s.Id));
+            await EnsureIndexAsync<Professor>("Professors", Builders<Professor>.IndexKeys.Ascending(p => p.Id));
+            await EnsureIndexAsync<Course>("Courses", Builders<Course>.IndexKeys.Ascending(c => c.Id));
         }
 
         private async Task EnsureCollectionExistsAsync<T>(string collectionName)

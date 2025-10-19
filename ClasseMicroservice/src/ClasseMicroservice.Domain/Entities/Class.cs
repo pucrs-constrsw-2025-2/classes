@@ -4,7 +4,7 @@ namespace ClasseMicroservice.Domain.Entities
 {
     public class Class
     {
-        public string Id { get; set; }
+    public string? Id { get; set; }
         public string ClassNumber { get; set; }
         public int Year { get; set; }
         public int Semester { get; set; }

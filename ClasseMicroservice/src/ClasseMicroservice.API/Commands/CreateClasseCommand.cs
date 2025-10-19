@@ -1,13 +1,2 @@
-using ClasseMicroservice.API.Models;
-
-namespace ClasseMicroservice.API.Commands
-{
-    public class CreateClassCommand
-    {
-        public Classe Class { get; set; }
-        public CreateClassCommand(Classe @class)
-        {
-            Class = @class;
-        }
-    }
-}
+// Alias para o tipo definido na camada Application.
+global using CreateClassCommand = ClasseMicroservice.Application.Commands.CreateClassCommand;

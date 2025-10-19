@@ -14,8 +14,10 @@ namespace ClasseMicroservice.Infrastructure.Repositories
         public ClassRepository(IConfiguration configuration)
         {
             var client = new MongoClient(configuration.GetConnectionString("MongoDb"));
-            var database = client.GetDatabase("ClassDb");
-            _classes = database.GetCollection<Class>("Classes");
+            var dbName = configuration.GetSection("MongoDbSettings").GetValue<string>("DatabaseName") ?? "classes";
+            var collectionName = configuration.GetSection("MongoDbSettings").GetValue<string>("CollectionName") ?? "Classes";
+            var database = client.GetDatabase(dbName);
+            _classes = database.GetCollection<Class>(collectionName);
         }
 
         public async Task<List<Class>> GetAllAsync()

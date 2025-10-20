@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copia todo o contexto da solução
+COPY . ./
+
+# Restaura dependências da solução
+RUN dotnet restore ClasseMicroservice.sln
+
+# Publica o projeto API
+RUN dotnet publish src/ClasseMicroservice.API/ClasseMicroservice.API.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+
+COPY --from=build /app/publish ./
+
+ENTRYPOINT ["dotnet", "ClasseMicroservice.API.dll"]

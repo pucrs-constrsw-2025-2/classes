@@ -81,12 +81,45 @@ builder.Services.AddTransient<ICommandHandler<UpdateClassCommand>, UpdateClassCo
 builder.Services.AddTransient<ICommandHandler<DeleteClassCommand>, DeleteClassCommandHandler>();
 
 // Settings (Mongo)
-builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
+// Settings (Mongo) - permite sobrescrever via variáveis de ambiente MONGODB_*
+var mongoHost = Environment.GetEnvironmentVariable("MONGODB_HOST");
+var mongoPort = Environment.GetEnvironmentVariable("MONGODB_PORT");
+var mongoUser = Environment.GetEnvironmentVariable("MONGODB_USERNAME");
+var mongoPass = Environment.GetEnvironmentVariable("MONGODB_PASSWORD");
+var mongoDb = Environment.GetEnvironmentVariable("MONGODB_DATABASE");
+
+if (!string.IsNullOrEmpty(mongoHost) || !string.IsNullOrEmpty(mongoPort) || !string.IsNullOrEmpty(mongoUser))
+{
+    var dbName = string.IsNullOrEmpty(mongoDb) ? "classes" : mongoDb;
+    var authPart = !string.IsNullOrEmpty(mongoUser) ? $"{mongoUser}:{mongoPass}@" : string.Empty;
+    var query = !string.IsNullOrEmpty(mongoUser) ? $"/?authSource={dbName}" : string.Empty;
+    var connectionString = $"mongodb://{authPart}{mongoHost}:{mongoPort}{query}";
+
+    builder.Services.Configure<DatabaseSettings>(options =>
+    {
+        options.ConnectionString = connectionString;
+        options.DatabaseName = dbName;
+    });
+
+    // Também injeta nos caminhos usados pela camada de Infra (IConfiguration)
+    builder.Configuration["ConnectionStrings:MongoDb"] = connectionString;
+    builder.Configuration["MongoDbSettings:DatabaseName"] = dbName;
+    // collection opcional
+    builder.Configuration["MongoDbSettings:CollectionName"] = builder.Configuration["MongoDbSettings:CollectionName"] ?? "classes";
+}
+else
+{
+    builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
+}
 
 var app = builder.Build();
 
 // Pipeline
-var enableSwagger = builder.Configuration.GetValue<bool>("EnableSwagger");
+// Enable Swagger when running in Development OR when ENABLE_SWAGGER env var is set to true.
+var enableSwaggerEnv = Environment.GetEnvironmentVariable("ENABLE_SWAGGER");
+var enableSwagger = !string.IsNullOrEmpty(enableSwaggerEnv)
+    ? enableSwaggerEnv.Equals("true", StringComparison.OrdinalIgnoreCase)
+    : builder.Configuration.GetValue<bool>("EnableSwagger");
 
 if (app.Environment.IsDevelopment() || enableSwagger)
 {

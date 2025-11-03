@@ -15,7 +15,12 @@ namespace ClasseMicroservice.Infrastructure.Repositories
         public ExamRepository(IConfiguration configuration)
         {
             var client = new MongoClient(configuration.GetConnectionString("MongoDb"));
-            var database = client.GetDatabase("ClassDb");
+            var dbName = configuration.GetSection("MongoDbSettings").GetValue<string>("DatabaseName")
+                         ?? configuration["MONGODB_DATABASE"]
+                         ?? configuration["MONGODB_DB"]
+                         ?? configuration["CLASSES_MONGODB_DB"]
+                         ?? "classes";
+            var database = client.GetDatabase(dbName);
             _exams = database.GetCollection<Exam>("Exams");
             _classes = database.GetCollection<Class>("Classes");
         }

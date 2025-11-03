@@ -14,7 +14,12 @@ namespace ClasseMicroservice.API.Data
         public MigrationService(IConfiguration configuration)
         {
             var client = new MongoClient(configuration.GetConnectionString("MongoDb"));
-            _database = client.GetDatabase("ClassDb");
+            var dbName = configuration.GetSection("MongoDbSettings").GetValue<string>("DatabaseName")
+                         ?? configuration["MONGODB_DATABASE"]
+                         ?? configuration["MONGODB_DB"]
+                         ?? configuration["CLASSES_MONGODB_DB"]
+                         ?? "classes";
+            _database = client.GetDatabase(dbName);
         }
 
         public async Task EnsureCollectionsAndIndexesAsync()

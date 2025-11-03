@@ -1,12 +1,14 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
 using ClasseMicroservice.API;
+using ClasseMicroservice.API.Middleware;
 using ClasseMicroservice.Domain.Entities;
 using ClasseMicroservice.Domain.Interfaces;
 
@@ -59,6 +61,30 @@ builder.Services.AddSwaggerGen(c =>
     {
         c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
     }
+
+    // Add JWT Bearer Authorization to Swagger so the UI shows the Authorize button
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 // Auth “NoAuth” como padrão (para dev)
@@ -81,45 +107,103 @@ builder.Services.AddTransient<ICommandHandler<UpdateClassCommand>, UpdateClassCo
 builder.Services.AddTransient<ICommandHandler<DeleteClassCommand>, DeleteClassCommandHandler>();
 
 // Settings (Mongo)
-// Settings (Mongo) - permite sobrescrever via variáveis de ambiente MONGODB_*
-var mongoHost = Environment.GetEnvironmentVariable("MONGODB_HOST");
-var mongoPort = Environment.GetEnvironmentVariable("MONGODB_PORT");
-var mongoUser = Environment.GetEnvironmentVariable("MONGODB_USERNAME");
-var mongoPass = Environment.GetEnvironmentVariable("MONGODB_PASSWORD");
-var mongoDb = Environment.GetEnvironmentVariable("MONGODB_DATABASE");
+// Monta a connection string a partir das variáveis de ambiente expostas pelo container
+// (não criamos novas variáveis; usamos apenas MONGODB_HOST, MONGODB_PORT,
+// MONGODB_USERNAME, MONGODB_PASSWORD, MONGODB_DATABASE ou a ConnectionStrings:MongoDb se já existir)
+var existingConn = builder.Configuration.GetValue<string>("ConnectionStrings:MongoDb");
 
-if (!string.IsNullOrEmpty(mongoHost) || !string.IsNullOrEmpty(mongoPort) || !string.IsNullOrEmpty(mongoUser))
+// If explicit MONGODB_* environment variables are provided, prefer them over the
+// default value in appsettings.json (which may be localhost). This avoids the
+// service trying to connect to localhost when running inside Docker where the
+// real mongo host is a different container.
+var envHost = builder.Configuration["MONGODB_HOST"] ?? builder.Configuration["MONGODB_INTERNAL_HOST"];
+if (!string.IsNullOrEmpty(envHost))
 {
-    var dbName = string.IsNullOrEmpty(mongoDb) ? "classes" : mongoDb;
-    var authPart = !string.IsNullOrEmpty(mongoUser) ? $"{mongoUser}:{mongoPass}@" : string.Empty;
-    var query = !string.IsNullOrEmpty(mongoUser) ? $"/?authSource={dbName}" : string.Empty;
-    var connectionString = $"mongodb://{authPart}{mongoHost}:{mongoPort}{query}";
+    var host = envHost;
+    var port = builder.Configuration["MONGODB_PORT"] ?? builder.Configuration["MONGODB_INTERNAL_PORT"] ?? "27017";
+    var user = builder.Configuration["MONGODB_USERNAME"];
+    var pass = builder.Configuration["MONGODB_PASSWORD"];
+    var db = builder.Configuration["MONGODB_DATABASE"] ?? builder.Configuration["MONGODB_DB"] ?? "classes";
 
-    builder.Services.Configure<DatabaseSettings>(options =>
+    string conn;
+    if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pass))
+        conn = $"mongodb://{Uri.EscapeDataString(user)}:{Uri.EscapeDataString(pass)}@{host}:{port}/{db}";
+    else
+        conn = $"mongodb://{host}:{port}/{db}";
+
+    var inMemory = new Dictionary<string, string>
     {
-        options.ConnectionString = connectionString;
-        options.DatabaseName = dbName;
-    });
+        // Override ConnectionStrings:MongoDb so MongoClient uses the container host
+        ["ConnectionStrings:MongoDb"] = conn,
+        ["DatabaseSettings:ConnectionString"] = conn,
+        ["DatabaseSettings:DatabaseName"] = db,
+        ["MongoDbSettings:DatabaseName"] = db,
+        ["MongoDbSettings:CollectionName"] = db
+    };
+    builder.Configuration.AddInMemoryCollection(inMemory);
+}
+else if (string.IsNullOrEmpty(existingConn))
+{
+    // No env and no existing connection string: fallback to localhost default
+    var host = "mongodb";
+    var port = builder.Configuration["MONGODB_PORT"] ?? builder.Configuration["MONGODB_INTERNAL_PORT"] ?? "27017";
+    var db = builder.Configuration["MONGODB_DATABASE"] ?? builder.Configuration["MONGODB_DB"] ?? "classes";
+    var conn = $"mongodb://{host}:{port}/{db}";
 
-    // Também injeta nos caminhos usados pela camada de Infra (IConfiguration)
-    builder.Configuration["ConnectionStrings:MongoDb"] = connectionString;
-    builder.Configuration["MongoDbSettings:DatabaseName"] = dbName;
-    // collection opcional
-    builder.Configuration["MongoDbSettings:CollectionName"] = builder.Configuration["MongoDbSettings:CollectionName"] ?? "classes";
+    var inMemory = new Dictionary<string, string>
+    {
+        ["ConnectionStrings:MongoDb"] = conn,
+        ["DatabaseSettings:ConnectionString"] = conn,
+        ["DatabaseSettings:DatabaseName"] = db,
+        ["MongoDbSettings:DatabaseName"] = db,
+        ["MongoDbSettings:CollectionName"] = db
+    };
+    builder.Configuration.AddInMemoryCollection(inMemory);
 }
 else
 {
-    builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
+    // existingConn is present (from appsettings.json or other providers) and
+    // no explicit MONGODB_* env vars were provided: keep existingConn but set
+    // DatabaseSettings fallbacks.
+    var db = builder.Configuration["DatabaseSettings:DatabaseName"] ?? builder.Configuration["MONGODB_DATABASE"] ?? builder.Configuration["MONGODB_DB"] ?? "classes";
+    var inMemory = new Dictionary<string, string>
+    {
+        ["DatabaseSettings:ConnectionString"] = existingConn,
+        ["DatabaseSettings:DatabaseName"] = db,
+        ["MongoDbSettings:DatabaseName"] = db,
+        ["MongoDbSettings:CollectionName"] = db
+    };
+    builder.Configuration.AddInMemoryCollection(inMemory);
 }
+
+builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("DatabaseSettings"));
+
+// Register HttpClient factory so middleware can call the oauth gateway
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
 // Pipeline
-// Enable Swagger when running in Development OR when ENABLE_SWAGGER env var is set to true.
-var enableSwaggerEnv = Environment.GetEnvironmentVariable("ENABLE_SWAGGER");
-var enableSwagger = !string.IsNullOrEmpty(enableSwaggerEnv)
-    ? enableSwaggerEnv.Equals("true", StringComparison.OrdinalIgnoreCase)
-    : builder.Configuration.GetValue<bool>("EnableSwagger");
+// Lê EnableSwagger da configuração ou da variável de ambiente PROVIDA (ENABLE_SWAGGER)
+// Isso garante compatibilidade com o docker-compose que expõe ENABLE_SWAGGER
+bool enableSwagger = false;
+{
+    // Primeiro tenta pela configuração normal (appsettings ou providers já carregados)
+    var cfgVal = builder.Configuration.GetValue<bool?>("EnableSwagger");
+    if (cfgVal.HasValue)
+    {
+        enableSwagger = cfgVal.Value;
+    }
+    else
+    {
+        // Tenta também pela variável de ambiente em maiúsculas com underscore
+        var envVal = Environment.GetEnvironmentVariable("ENABLE_SWAGGER") ?? builder.Configuration["ENABLE_SWAGGER"];
+        if (!string.IsNullOrEmpty(envVal) && bool.TryParse(envVal, out var parsed))
+        {
+            enableSwagger = parsed;
+        }
+    }
+}
 
 if (app.Environment.IsDevelopment() || enableSwagger)
 {
@@ -133,6 +217,9 @@ if (app.Environment.IsDevelopment() || enableSwagger)
         c.RoutePrefix = "swagger";
     });
 }
+
+// Register OAuth token validation middleware - it will call the gateway (`oauth` service)
+app.UseMiddleware<ClasseMicroservice.API.Middleware.OAuthValidationMiddleware>();
 
 app.UseHttpsRedirection();
 

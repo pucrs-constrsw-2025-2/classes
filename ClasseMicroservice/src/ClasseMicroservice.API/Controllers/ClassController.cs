@@ -363,23 +363,51 @@ namespace ClasseMicroservice.API.Controllers
                         continue;
                     }
 
-                    if (targetTypeToConvert.IsEnum)
+                    // Handle JsonElement input (ASP.NET Core binds Dictionary<string, object> values as JsonElement)
+                    object valueObj = kv.Value;
+                    if (kv.Value is System.Text.Json.JsonElement je)
                     {
-                        var enumVal = Enum.Parse(targetTypeToConvert, kv.Value.ToString(), true);
-                        prop.SetValue(target, enumVal);
-                        continue;
+                        // Enum
+                        if (targetTypeToConvert.IsEnum)
+                        {
+                            var enumVal = Enum.Parse(targetTypeToConvert, je.GetString()!, true);
+                            prop.SetValue(target, enumVal);
+                            continue;
+                        }
+
+                        // Complex type -> full deserialize
+                        if (!IsSimpleType(targetTypeToConvert))
+                        {
+                            var json = je.GetRawText();
+                            var deserialized = System.Text.Json.JsonSerializer.Deserialize(json, currentType);
+                            prop.SetValue(target, deserialized);
+                            continue;
+                        }
+
+                        // Simple types extracted
+                        valueObj = je.ValueKind switch
+                        {
+                            System.Text.Json.JsonValueKind.String => je.GetString(),
+                            System.Text.Json.JsonValueKind.Number => je.TryGetInt64(out var l) ? (object)l : je.TryGetDouble(out var d) ? d : je.GetRawText(),
+                            System.Text.Json.JsonValueKind.True => true,
+                            System.Text.Json.JsonValueKind.False => false,
+                            System.Text.Json.JsonValueKind.Null => null,
+                            _ => je.GetRawText()
+                        };
+
+                        if (valueObj == null)
+                        {
+                            prop.SetValue(target, null);
+                            continue;
+                        }
                     }
 
-                    if (!IsSimpleType(targetTypeToConvert) && kv.Value is System.Text.Json.JsonElement je)
+                    // Final conversion for simple scalar types when needed
+                    if (valueObj != null && targetTypeToConvert != valueObj.GetType())
                     {
-                        var json = je.GetRawText();
-                        var deserialized = System.Text.Json.JsonSerializer.Deserialize(json, currentType);
-                        prop.SetValue(target, deserialized);
-                        continue;
+                        valueObj = Convert.ChangeType(valueObj, targetTypeToConvert);
                     }
-
-                    var converted = Convert.ChangeType(kv.Value, targetTypeToConvert);
-                    prop.SetValue(target, converted);
+                    prop.SetValue(target, valueObj);
                 }
                 catch
                 {

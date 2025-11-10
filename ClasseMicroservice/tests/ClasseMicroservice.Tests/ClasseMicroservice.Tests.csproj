@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/ClasseMicroservice.Application/ClasseMicroservice.Application.csproj" />
     <ProjectReference Include="../../src/ClasseMicroservice.Domain/ClasseMicroservice.Domain.csproj" />
+    <ProjectReference Include="../../src/ClasseMicroservice.API/ClasseMicroservice.API.csproj" />
   </ItemGroup>
 
 </Project>

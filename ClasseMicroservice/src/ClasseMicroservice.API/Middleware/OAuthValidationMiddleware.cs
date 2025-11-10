@@ -19,7 +19,7 @@ namespace ClasseMicroservice.API.Middleware
 
     // Paths to exclude from token validation
     // Note: do NOT include "/" here because StartsWith("/") would match everything.
-    private readonly string[] _excludedPrefixes = new[] { "/swagger", "/api/v1/health", "/favicon", "/openapi" };
+    private readonly string[] _excludedPrefixes = new[] { "/swagger", "/health", "/api/v1/health", "/favicon", "/openapi" };
 
         public OAuthValidationMiddleware(RequestDelegate next, IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<OAuthValidationMiddleware> logger)
         {

@@ -6,6 +6,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 using ClasseMicroservice.API;
 using ClasseMicroservice.API.Middleware;
@@ -181,7 +187,40 @@ builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("D
 // Register HttpClient factory so middleware can call the oauth gateway
 builder.Services.AddHttpClient();
 
+// Configure Health Checks (equivalente ao Spring Boot Actuator)
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDb") ?? 
+    builder.Configuration["ConnectionStrings:MongoDb"] ?? "";
+if (!string.IsNullOrEmpty(mongoConnectionString))
+{
+    builder.Services.AddHealthChecks()
+        .AddMongoDb(
+            mongoConnectionString,
+            name: "mongodb",
+            tags: new[] { "db", "nosql", "mongodb" }
+        );
+}
+else
+{
+    // Fallback: health check simples se não houver connection string
+    builder.Services.AddHealthChecks();
+}
+
+// Configure OpenTelemetry
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService(serviceName: Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? "classes", serviceVersion: "1.0.0"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation())
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddPrometheusExporter());
+
 var app = builder.Build();
+
+// Expose Prometheus metrics
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 // Pipeline
 // Lê EnableSwagger da configuração ou da variável de ambiente PROVIDA (ENABLE_SWAGGER)
@@ -227,5 +266,27 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health check endpoint padronizado (formato compatível com Actuator)
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new
+        {
+            status = report.Status == HealthStatus.Healthy ? "UP" : "DOWN",
+            components = report.Entries.ToDictionary(
+                e => e.Key,
+                e => new
+                {
+                    status = e.Value.Status == HealthStatus.Healthy ? "UP" : "DOWN",
+                    details = e.Value.Description
+                }
+            )
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 
 app.Run();

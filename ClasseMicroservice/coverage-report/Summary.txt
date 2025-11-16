@@ -1,0 +1,65 @@
+Summary
+  Generated on: 16/11/2025 - 14:28:00
+  Coverage date: 16/11/2025 - 14:25:20 - 16/11/2025 - 14:27:55
+  Parser: MultiReport (3x Cobertura)
+  Assemblies: 4
+  Classes: 37
+  Files: 37
+  Line coverage: 41.7%
+  Covered lines: 340
+  Uncovered lines: 475
+  Coverable lines: 815
+  Total lines: 1561
+  Branch coverage: 41.1% (116 of 282)
+  Covered branches: 116
+  Total branches: 282
+  Method coverage: 57.7% (67 of 116)
+  Full method coverage: 51.7% (60 of 116)
+  Covered methods: 67
+  Fully covered methods: 60
+  Total methods: 116
+
+ClasseMicroservice.API                                                        30.7%
+  ClasseMicroservice.API.Authentication.AllowAnonymousAuthenticationHandler      0%
+  ClasseMicroservice.API.Controllers.ClassesController                        50.9%
+  ClasseMicroservice.API.Data.MigrationService                                   0%
+  ClasseMicroservice.API.DatabaseSettings                                        0%
+  ClasseMicroservice.API.DTOs.CreateClassDto                                   100%
+  ClasseMicroservice.API.DTOs.CreateCourseDto                                  100%
+  ClasseMicroservice.API.DTOs.CreateExamDto                                      0%
+  ClasseMicroservice.API.DTOs.CreateProfessorDto                                 0%
+  ClasseMicroservice.API.DTOs.CreateStudentDto                                   0%
+  ClasseMicroservice.API.Middleware.OAuthValidationMiddleware                 78.5%
+  ClasseMicroservice.API.Models.Course                                           0%
+  ClasseMicroservice.API.Models.Exam                                             0%
+  ClasseMicroservice.API.Models.Professor                                        0%
+  ClasseMicroservice.API.Models.Student                                          0%
+  ClasseMicroservice.API.Repositories.InMemoryClassRepository                    0%
+  Program                                                                        0%
+
+ClasseMicroservice.Application                                                 100%
+  ClasseMicroservice.Application.Commands.AddExamCommand                       100%
+  ClasseMicroservice.Application.Commands.AddExamCommandHandler                100%
+  ClasseMicroservice.Application.Commands.CreateClassCommand                   100%
+  ClasseMicroservice.Application.Commands.CreateClassCommandHandler            100%
+  ClasseMicroservice.Application.Commands.DeleteClassCommand                   100%
+  ClasseMicroservice.Application.Commands.DeleteClassCommandHandler            100%
+  ClasseMicroservice.Application.Commands.UpdateClassCommand                   100%
+  ClasseMicroservice.Application.Commands.UpdateClassCommandHandler            100%
+  ClasseMicroservice.Application.Queries.GetClassByIdQuery                     100%
+  ClasseMicroservice.Application.Queries.GetClassByIdQueryHandler              100%
+  ClasseMicroservice.Application.Queries.GetClassesQuery                       100%
+  ClasseMicroservice.Application.Queries.GetClassesQueryHandler                100%
+  ClasseMicroservice.Application.Queries.GetExamsQuery                         100%
+  ClasseMicroservice.Application.Queries.GetExamsQueryHandler                  100%
+
+ClasseMicroservice.Domain                                                     87.5%
+  ClasseMicroservice.Domain.Entities.Class                                     100%
+  ClasseMicroservice.Domain.Entities.Course                                    100%
+  ClasseMicroservice.Domain.Entities.Exam                                       50%
+  ClasseMicroservice.Domain.Entities.Professor                                 100%
+  ClasseMicroservice.Domain.Entities.Student                                   100%
+
+ClasseMicroservice.Infrastructure                                                0%
+  ClasseMicroservice.Infrastructure.Repositories.ClassRepository                 0%
+  ClasseMicroservice.Infrastructure.Repositories.ExamRepository                  0%

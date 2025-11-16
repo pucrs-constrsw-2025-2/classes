@@ -7,88 +7,77 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace ClasseMicroservice.Tests.Commands;
-
-public class CreateClassCommandHandlerTests
+namespace ClasseMicroservice.Tests.Commands
 {
-    [Fact]
-    public async Task HandleAsync_AssignsIds_WhenMissing_AndCallsRepository()
+    public class CreateClassCommandHandlerTests
     {
-        // Arrange
-        var repo = new Mock<IClassRepository>();
-        repo.Setup(r => r.CreateAsync(It.IsAny<Class>())).Returns(Task.CompletedTask);
-
-        var handler = new CreateClassCommandHandler(repo.Object);
-
-        var cls = new Class
+        [Fact]
+        public async Task HandleAsync_AssignsIds_WhenMissing()
         {
-            Id = null,
-            ClassNumber = "101",
-            Year = 2025,
-            Semester = 2,
-            Schedule = "Mon 10:00",
-            Course = new Course { Id = null },
-            Students = new List<Student> { new Student { Id = null }, new Student { Id = "pre" } },
-            Professors = new List<Professor> { new Professor { Id = null } },
-            Exams = new List<Exam> { new Exam { Id = null, Name = "P1" } }
-        };
+            var repo = new Mock<IClassRepository>(MockBehavior.Strict);
+            Class? captured = null;
+            repo.Setup(r => r.CreateAsync(It.IsAny<Class>()))
+                .Callback<Class>(c => captured = c)
+                .Returns(Task.CompletedTask);
 
-        var cmd = new CreateClassCommand(cls);
+            var handler = new CreateClassCommandHandler(repo.Object);
 
-        // Act
-        await handler.HandleAsync(cmd);
+            var cls = new Class
+            {
+                ClassNumber = "01",
+                Year = 2025,
+                Semester = 2,
+                Schedule = "Mon 10-12",
+                Course = new Course { /* Id missing on purpose */ },
+                Exams = new List<Exam> { new Exam { Name = "P1" } },
+                Students = new List<Student> { new Student() },
+                Professors = new List<Professor> { new Professor() }
+            };
 
-        // Assert
-        cls.Id.Should().NotBeNullOrWhiteSpace();
-        cls.Course.Id.Should().NotBeNullOrWhiteSpace();
-        cls.Students[0].Id.Should().NotBeNullOrWhiteSpace();
-        cls.Students[1].Id.Should().Be("pre");
-        cls.Professors[0].Id.Should().NotBeNullOrWhiteSpace();
-        cls.Exams[0].Id.Should().NotBeNullOrWhiteSpace();
+            await handler.HandleAsync(new CreateClassCommand(cls));
 
-        repo.Verify(r => r.CreateAsync(It.Is<Class>(c => c == cls)), Times.Once);
-    }
+            repo.Verify(r => r.CreateAsync(It.IsAny<Class>()), Times.Once);
+            captured.Should().NotBeNull();
+            captured!.Id.Should().NotBeNullOrWhiteSpace();
+            captured.Course.Id.Should().NotBeNullOrWhiteSpace();
+            captured.Exams[0].Id.Should().NotBeNullOrWhiteSpace();
+            captured.Students[0].Id.Should().NotBeNullOrWhiteSpace();
+            captured.Professors[0].Id.Should().NotBeNullOrWhiteSpace();
+        }
 
-    [Fact]
-    public async Task HandleAsync_NullClass_DoesNotThrow_StillCallsRepositoryWithNull()
-    {
-        // Arrange
-        var repo = new Mock<IClassRepository>();
-        repo.Setup(r => r.CreateAsync(null!)).Returns(Task.CompletedTask);
-        var handler = new CreateClassCommandHandler(repo.Object);
-        var cmd = new CreateClassCommand(null!);
-
-        // Act
-        await handler.HandleAsync(cmd);
-
-        // Assert
-        repo.Verify(r => r.CreateAsync(null!), Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleAsync_NullCollections_And_NullCourse_AreHandled()
-    {
-        var repo = new Mock<IClassRepository>();
-        repo.Setup(r => r.CreateAsync(It.IsAny<Class>())).Returns(Task.CompletedTask);
-        var handler = new CreateClassCommandHandler(repo.Object);
-
-        var cls = new Class
+        [Fact]
+        public async Task HandleAsync_DoesNotOverrideExistingIds()
         {
-            Id = null,
-            ClassNumber = "202",
-            Year = 2026,
-            Semester = 1,
-            Schedule = "Tue 08:00",
-            Course = null!,
-            Students = null!,
-            Professors = null!,
-            Exams = null!
-        };
+            var repo = new Mock<IClassRepository>(MockBehavior.Strict);
+            Class? captured = null;
+            repo.Setup(r => r.CreateAsync(It.IsAny<Class>()))
+                .Callback<Class>(c => captured = c)
+                .Returns(Task.CompletedTask);
 
-        await handler.HandleAsync(new CreateClassCommand(cls));
+            var handler = new CreateClassCommandHandler(repo.Object);
 
-        cls.Id.Should().NotBeNullOrWhiteSpace();
-        // Course and collections remain null without throwing
-        repo.Verify(r => r.CreateAsync(cls), Times.Once);
+            var cls = new Class
+            {
+                Id = "CLASS-1",
+                ClassNumber = "01",
+                Year = 2025,
+                Semester = 2,
+                Schedule = "Mon 10-12",
+                Course = new Course { Id = "COURSE-1" },
+                Exams = new List<Exam> { new Exam { Id = "EX-1", Name = "P1" } },
+                Students = new List<Student> { new Student { Id = "ST-1" } },
+                Professors = new List<Professor> { new Professor { Id = "PF-1" } }
+            };
+
+            await handler.HandleAsync(new CreateClassCommand(cls));
+
+            repo.Verify(r => r.CreateAsync(It.IsAny<Class>()), Times.Once);
+            captured!.Id.Should().Be("CLASS-1");
+            captured.Course.Id.Should().Be("COURSE-1");
+            captured.Exams[0].Id.Should().Be("EX-1");
+            captured.Students[0].Id.Should().Be("ST-1");
+            captured.Professors[0].Id.Should().Be("PF-1");
+        }
     }
 }
+

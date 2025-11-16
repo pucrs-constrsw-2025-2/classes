@@ -1,0 +1,36 @@
+Summary
+  Generated on: 16/11/2025 - 14:31:23
+  Coverage date: 16/11/2025 - 14:30:45
+  Parser: Cobertura
+  Assemblies: 1
+  Classes: 14
+  Files: 14
+  Line coverage: 100%
+  Covered lines: 143
+  Uncovered lines: 0
+  Coverable lines: 143
+  Total lines: 303
+  Branch coverage: 91.6% (44 of 48)
+  Covered branches: 44
+  Total branches: 48
+  Method coverage: 100% (34 of 34)
+  Full method coverage: 100% (34 of 34)
+  Covered methods: 34
+  Fully covered methods: 34
+  Total methods: 34
+
+ClasseMicroservice.Application                                         100%
+  ClasseMicroservice.Application.Commands.AddExamCommand               100%
+  ClasseMicroservice.Application.Commands.AddExamCommandHandler        100%
+  ClasseMicroservice.Application.Commands.CreateClassCommand           100%
+  ClasseMicroservice.Application.Commands.CreateClassCommandHandler    100%
+  ClasseMicroservice.Application.Commands.DeleteClassCommand           100%
+  ClasseMicroservice.Application.Commands.DeleteClassCommandHandler    100%
+  ClasseMicroservice.Application.Commands.UpdateClassCommand           100%
+  ClasseMicroservice.Application.Commands.UpdateClassCommandHandler    100%
+  ClasseMicroservice.Application.Queries.GetClassByIdQuery             100%
+  ClasseMicroservice.Application.Queries.GetClassByIdQueryHandler      100%
+  ClasseMicroservice.Application.Queries.GetClassesQuery               100%
+  ClasseMicroservice.Application.Queries.GetClassesQueryHandler        100%
+  ClasseMicroservice.Application.Queries.GetExamsQuery                 100%
+  ClasseMicroservice.Application.Queries.GetExamsQueryHandler          100%

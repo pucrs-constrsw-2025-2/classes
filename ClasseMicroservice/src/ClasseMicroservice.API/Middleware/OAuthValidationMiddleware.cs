@@ -49,7 +49,7 @@ namespace ClasseMicroservice.API.Middleware
             var oauthProtocol = _configuration["OAUTH_INTERNAL_PROTOCOL"] ?? "http";
             var oauthHost = _configuration["OAUTH_INTERNAL_HOST"] ?? "oauth";
             var oauthPort = _configuration["OAUTH_INTERNAL_API_PORT"] ?? "8080";
-            var validateUrl = $"{oauthProtocol}://{oauthHost}:{oauthPort}/validate";
+            var validateUrl = $"{oauthProtocol}://{oauthHost}:{oauthPort}/api/v1/validate";
 
             var client = _httpClientFactory.CreateClient();
 

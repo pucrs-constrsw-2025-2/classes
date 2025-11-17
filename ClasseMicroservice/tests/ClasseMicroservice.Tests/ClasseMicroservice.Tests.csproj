@@ -12,9 +12,7 @@
     <CoverletOutput>coverage-all</CoverletOutput>
     <Include>[ClasseMicroservice.*]*</Include>
     <Exclude>[ClasseMicroservice.Tests]*</Exclude>
-    <Threshold>90</Threshold>
-    <ThresholdType>line</ThresholdType>
-    <ThresholdStat>Total</ThresholdStat>
+    <!-- Threshold removido para evitar falha precoce; será avaliado externamente no workflow -->
   </PropertyGroup>
 
   <ItemGroup>

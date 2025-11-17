@@ -36,7 +36,7 @@ jobs:
             -p:CoverletOutputFormat="cobertura" \
             -p:CoverletOutput="unit-coverage" \
             -p:Include="[ClasseMicroservice.*]*" \
-            -p:Exclude="[ClasseMicroservice.Tests]*"\;"[ClasseMicroservice.Infrastructure]*"
+            -p:Exclude="[ClasseMicroservice.Tests]*;[ClasseMicroservice.Infrastructure]*"
           popd
 
       - name: Run Integration Tests (Category=Integration)
@@ -49,7 +49,7 @@ jobs:
             -p:CoverletOutputFormat="cobertura" \
             -p:CoverletOutput="integration-coverage" \
             -p:Include="[ClasseMicroservice.*]*" \
-            -p:Exclude="[ClasseMicroservice.Tests]*"\;"[ClasseMicroservice.Infrastructure]*"
+            -p:Exclude="[ClasseMicroservice.Tests]*;[ClasseMicroservice.Infrastructure]*"
           popd
 
       - name: Upload Coverage Artifacts

@@ -1,0 +1,57 @@
+name: .NET Tests
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore "ClasseMicroservice/ClasseMicroservice.sln"
+
+      - name: Build
+        run: dotnet build "ClasseMicroservice/ClasseMicroservice.sln" --configuration Release --no-restore
+
+      - name: Run Unit Tests (Category!=Integration)
+        run: |
+          pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
+          dotnet test -v minimal \
+            --filter "Category!=Integration" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:Include="[ClasseMicroservice.*]*" \
+            /p:Exclude="[ClasseMicroservice.Tests]*" \
+            /p:CoverletOutput="unit-coverage"
+          popd
+
+      - name: Run Integration Tests (Category=Integration)
+        run: |
+          pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
+          dotnet test -v minimal \
+            --filter "Category=Integration" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:Include="[ClasseMicroservice.*]*" \
+            /p:Exclude="[ClasseMicroservice.Tests]*" \
+            /p:CoverletOutput="integration-coverage"
+          popd
+
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/unit-coverage.cobertura.xml
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/integration-coverage.cobertura.xml

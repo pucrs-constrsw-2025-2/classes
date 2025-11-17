@@ -26,12 +26,18 @@ packages/
 
 # Test results
 TestResult*/
+TestResults/
 *.trx
 
 # Code coverage
 coverage/
 *.coverage
 *.coveragexml
+**/coverage.cobertura.xml
+**/coverage-*.cobertura.xml
+**/coverage-all-report/
+**/coverage-app-report/
+**/coverage-*-report/
 
 # JetBrains Rider
 .idea/

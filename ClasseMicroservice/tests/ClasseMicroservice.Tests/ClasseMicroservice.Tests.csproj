@@ -5,6 +5,16 @@
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Coverage thresholds e filtros serão passados via linha de comando/runsettings para evitar conflito -->
+    <!-- Reativar configuração explícita para garantir geração de arquivo de cobertura -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <CoverletOutput>coverage-all</CoverletOutput>
+    <Include>[ClasseMicroservice.*]*</Include>
+    <Exclude>[ClasseMicroservice.Tests]*</Exclude>
+    <Threshold>90</Threshold>
+    <ThresholdType>line</ThresholdType>
+    <ThresholdStat>Total</ThresholdStat>
   </PropertyGroup>
 
   <ItemGroup>

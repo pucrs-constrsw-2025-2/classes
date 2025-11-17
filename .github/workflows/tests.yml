@@ -9,6 +9,8 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      COVERAGE_THRESHOLD: '90'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,3 +57,34 @@ jobs:
           path: |
             ClasseMicroservice/tests/ClasseMicroservice.Tests/unit-coverage.cobertura.xml
             ClasseMicroservice/tests/ClasseMicroservice.Tests/integration-coverage.cobertura.xml
+      - name: Merge and Generate Combined Coverage HTML
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
+          reportgenerator \
+            -reports:unit-coverage.cobertura.xml;integration-coverage.cobertura.xml \
+            -targetdir:coverage-html-all \
+            -reporttypes:"Html;HtmlSummary"
+          popd
+      - name: Evaluate Combined Coverage Threshold
+        shell: pwsh
+        run: |
+          $unit = Get-Content "ClasseMicroservice/tests/ClasseMicroservice.Tests/unit-coverage.cobertura.xml"
+          $integ = Get-Content "ClasseMicroservice/tests/ClasseMicroservice.Tests/integration-coverage.cobertura.xml"
+          [xml]$ux = $unit; [xml]$ix = $integ
+          $covered = ([int]$ux.coverage.'lines-covered' + [int]$ix.coverage.'lines-covered')
+          $valid   = ([int]$ux.coverage.'lines-valid' + [int]$ix.coverage.'lines-valid')
+          if ($valid -eq 0) { Write-Error 'No lines found'; exit 1 }
+          $pct = [math]::Round(($covered / $valid) * 100, 2)
+          "Cobertura combinada: $pct%" | Out-Host
+          "## Cobertura combinada: $pct%" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if ($pct -lt [int]$env:COVERAGE_THRESHOLD) { Write-Error "Coverage below threshold $($env:COVERAGE_THRESHOLD)% (found $pct%)"; exit 1 }
+      - name: Upload Combined Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-combined-html
+          path: |
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-html-all/**
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/unit-coverage.cobertura.xml
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/integration-coverage.cobertura.xml
+          if-no-files-found: error

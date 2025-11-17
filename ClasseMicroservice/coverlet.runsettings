@@ -4,20 +4,14 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
-          <!-- Include only the core logic assembly to enforce high coverage -->
+          <!-- Include all core microservice assemblies (API, Application, Domain) -->
           <Include>
-            <ModulePath>.*ClasseMicroservice\.Application\.dll$</ModulePath>
+            <ModulePath>.*ClasseMicroservice\.(API|Application|Domain)\.dll$</ModulePath>
           </Include>
-          <!-- Exclude infrastructure and Program (top-level statements) to avoid noisy coverage (kept for future) -->
+          <!-- Exclude only explicit bootstrap and any classes marked with the attribute -->
           <Exclude>
-            <ModulePath>.*ClasseMicroservice\.Infrastructure\.dll$</ModulePath>
             <Attribute>System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute</Attribute>
             <Class>ClasseMicroservice.API.Program</Class>
-            <Class>ClasseMicroservice.API.Authentication.*</Class>
-            <Class>ClasseMicroservice.API.Data.*</Class>
-            <Class>ClasseMicroservice.API.DTOs.*</Class>
-            <Class>ClasseMicroservice.API.Models.*</Class>
-            <Class>ClasseMicroservice.API.Repositories.*</Class>
           </Exclude>
           <Format>cobertura</Format>
           <SingleHit>false</SingleHit>

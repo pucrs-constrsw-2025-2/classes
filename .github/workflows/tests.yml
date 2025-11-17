@@ -5,6 +5,12 @@ on:
     branches: [ "**" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      run_external:
+        description: "Run external integration tests (Mongo/Testcontainers)"
+        type: boolean
+        default: false
 
 jobs:
   build-and-test:
@@ -34,38 +40,53 @@ jobs:
         if: ${{ always() }}
         run: echo "Etapa substituída por execução única de testes com cobertura."
 
-      - name: Run All Tests With Coverage
+      - name: Run Fast Tests With Coverage (Unit + Integração rápida)
         run: |
           pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
           dotnet test ../../ClasseMicroservice.sln -v minimal \
             -p:CollectCoverage=true \
             -p:CoverletOutputFormat="cobertura" \
-            -p:CoverletOutput="coverage-all" \
+            -p:CoverletOutput="coverage-fast" \
             -p:Include="[ClasseMicroservice.*]*" \
-            -p:Exclude="[ClasseMicroservice.Tests]*"
+            -p:Exclude="[ClasseMicroservice.Tests]*" \
+            --filter "Category!=External"
           popd
-      - name: Generate Coverage HTML
+      - name: Run External Tests With Coverage (Mongo/Testcontainers)
+        run: |
+          pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
+          dotnet test ../../ClasseMicroservice.sln -v minimal \
+            -p:CollectCoverage=true \
+            -p:CoverletOutputFormat="cobertura" \
+            -p:CoverletOutput="coverage-ext" \
+            -p:Include="[ClasseMicroservice.*]*" \
+            -p:Exclude="[ClasseMicroservice.Tests]*" \
+            --filter "Category=External"
+          popd
+      - name: Merge Coverage And Generate HTML
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool
           pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
           reportgenerator \
-            -reports:coverage-all.cobertura.xml \
-            -targetdir:coverage-html-all \
-            -reporttypes:"Html;HtmlSummary"
+            -reports:"coverage-fast.cobertura.xml;coverage-ext.cobertura.xml" \
+            -targetdir:coverage-merged \
+            -reporttypes:"Html;HtmlSummary;Cobertura"
           popd
       - name: Upload Coverage Artifacts (XML + HTML)
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-html-and-xml
+          name: coverage-merged-html-and-xml
           path: |
-            ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-all.cobertura.xml
-            ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-html-all/**
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-fast.cobertura.xml
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-ext.cobertura.xml
+            ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-merged/**
           if-no-files-found: warn
       - name: Evaluate Combined Coverage Threshold
         shell: pwsh
         run: |
-          [xml]$cov = Get-Content "ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-all.cobertura.xml"
+          $merged = "ClasseMicroservice/tests/ClasseMicroservice.Tests/coverage-merged/Cobertura.xml"
+          if (-not (Test-Path $merged)) { Write-Error "Merged Cobertura.xml not found at $merged"; exit 1 }
+          [xml]$cov = Get-Content $merged
           $covered = [int]$cov.coverage.'lines-covered'
           $valid = [int]$cov.coverage.'lines-valid'
           if ($valid -eq 0) { Write-Error 'No lines found'; exit 1 }
@@ -73,3 +94,35 @@ jobs:
           "Cobertura combinada: $pct%" | Out-Host
           "## Cobertura combinada: $pct%" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           if ($pct -lt [int]$env:COVERAGE_THRESHOLD) { Write-Error "Coverage below threshold $($env:COVERAGE_THRESHOLD)% (found $pct%)"; exit 1 }
+
+  external-integration-tests:
+    name: External Integration Tests (Mongo)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_external == true }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Docker Info
+        run: |
+          docker version
+          docker info
+
+      - name: Restore
+        run: dotnet restore "ClasseMicroservice/ClasseMicroservice.sln"
+
+      - name: Build
+        run: dotnet build "ClasseMicroservice/ClasseMicroservice.sln" --configuration Release --no-restore
+
+      - name: Run External (Category=External)
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+        run: |
+          pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
+          dotnet test ../../ClasseMicroservice.sln --filter "Category=External" -v minimal
+          popd

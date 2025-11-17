@@ -31,6 +31,14 @@ namespace ClasseMicroservice.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            // Optional bypass for testing or local scenarios
+            var disableAuth = _configuration["DISABLE_AUTH"];
+            if (!string.IsNullOrEmpty(disableAuth) && bool.TryParse(disableAuth, out var disabled) && disabled)
+            {
+                await _next(context);
+                return;
+            }
+
             var path = context.Request.Path.Value ?? string.Empty;
             // Exclude exact root ("/") and the configured prefixes
             if (path == "/" || string.IsNullOrEmpty(path) || _excludedPrefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))

@@ -32,11 +32,11 @@ jobs:
           pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
           dotnet test -v minimal \
             --filter "Category!=Integration" \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:Include="[ClasseMicroservice.*]*" \
-            /p:Exclude="[ClasseMicroservice.Tests]*,[ClasseMicroservice.Infrastructure]*" \
-            /p:CoverletOutput="unit-coverage"
+            -p:CollectCoverage=true \
+            -p:CoverletOutputFormat="cobertura" \
+            -p:CoverletOutput="unit-coverage" \
+            -p:Include="[ClasseMicroservice.*]*" \
+            -p:Exclude="[ClasseMicroservice.Tests]*"\;"[ClasseMicroservice.Infrastructure]*"
           popd
 
       - name: Run Integration Tests (Category=Integration)
@@ -45,11 +45,11 @@ jobs:
           pushd "ClasseMicroservice/tests/ClasseMicroservice.Tests"
           dotnet test -v minimal \
             --filter "Category=Integration" \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:Include="[ClasseMicroservice.*]*" \
-            /p:Exclude="[ClasseMicroservice.Tests]*,[ClasseMicroservice.Infrastructure]*" \
-            /p:CoverletOutput="integration-coverage"
+            -p:CollectCoverage=true \
+            -p:CoverletOutputFormat="cobertura" \
+            -p:CoverletOutput="integration-coverage" \
+            -p:Include="[ClasseMicroservice.*]*" \
+            -p:Exclude="[ClasseMicroservice.Tests]*"\;"[ClasseMicroservice.Infrastructure]*"
           popd
 
       - name: Upload Coverage Artifacts

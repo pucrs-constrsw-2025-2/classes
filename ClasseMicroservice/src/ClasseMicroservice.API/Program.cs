@@ -247,13 +247,15 @@ bool enableSwagger = false;
 if (app.Environment.IsDevelopment() || enableSwagger)
 {
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
+    app.UseSwagger(c =>
+    {
+        c.RouteTemplate = "api/v1/swagger/{documentName}/swagger.json";
+    });
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ClasseMicroservice API v1");
+        c.SwaggerEndpoint("/api/v1/swagger/v1/swagger.json", "ClasseMicroservice API v1");
         c.DocumentTitle = "ClasseMicroservice API";
-        // Opcional: exibir sem precisar clicar no "v1"
-        c.RoutePrefix = "swagger";
+        c.RoutePrefix = "api/v1/docs";
     });
 }
 

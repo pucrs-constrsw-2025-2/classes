@@ -1,0 +1,578 @@
+openapi: 3.1.0
+info:
+  title: ConstrSW - Classes API
+  description: API para gerenciamento de turmas e provas
+  version: 1.0.0
+servers:
+  - url: http://localhost:8182
+    description: Servidor de desenvolvimento (externo)
+  - url: http://classes:8080
+    description: Servidor interno (Docker)
+
+tags:
+  - name: Classes
+    description: Gerenciamento de turmas
+  - name: Exams
+    description: Gerenciamento de provas
+
+paths:
+  /api/v1/classes:
+    post:
+      tags:
+        - Classes
+      summary: Criar uma nova classe
+      operationId: createClass
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClassRequest'
+      responses:
+        '201':
+          description: Classe criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      tags:
+        - Classes
+      summary: Listar classes
+      operationId: getClasses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: semester
+          in: query
+          schema:
+            type: integer
+        - name: course_id
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Lista de classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/classes/{id}:
+    get:
+      tags:
+        - Classes
+      summary: Obter classe por ID
+      operationId: getClassById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dados da classe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Classes
+      summary: Atualizar classe (completo)
+      operationId: updateClass
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassUpdateRequest'
+      responses:
+        '200':
+          description: Classe atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Classes
+      summary: Atualização parcial da classe
+      operationId: patchClass
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Classe atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Classes
+      summary: Excluir classe
+      operationId: deleteClass
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Classe excluída
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/classes/{id}/exams:
+    post:
+      tags:
+        - Exams
+      summary: Adicionar prova à classe
+      operationId: addExam
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamRequest'
+      responses:
+        '201':
+          description: Prova adicionada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      tags:
+        - Exams
+      summary: Listar provas da classe
+      operationId: getExams
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de provas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExamResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/classes/{id}/exams/{examId}:
+    get:
+      tags:
+        - Exams
+      summary: Obter prova por ID
+      operationId: getExamById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dados da prova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Exams
+      summary: Atualizar prova (completo)
+      operationId: updateExam
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamRequest'
+      responses:
+        '200':
+          description: Prova atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Exams
+      summary: Atualização parcial da prova
+      operationId: patchExam
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Prova atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Exams
+      summary: Excluir prova
+      operationId: deleteExam
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Prova excluída
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Serviço está funcionando
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Não autorizado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    CreateClassRequest:
+      type: object
+      properties:
+        classNumber:
+          type: string
+        year:
+          type: integer
+        semester:
+          type: integer
+        schedule:
+          type: string
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+        exam:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            date:
+              type: string
+              format: date-time
+            weight:
+              type: number
+        student:
+          type: object
+          properties:
+            id:
+              type: string
+        professor:
+          type: object
+          properties:
+            id:
+              type: string
+
+    ClassUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        classNumber:
+          type: string
+        year:
+          type: integer
+        semester:
+          type: integer
+        schedule:
+          type: string
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+        exams:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamResponse'
+        students:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+        professors:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+
+    ClassResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        classNumber:
+          type: string
+        year:
+          type: integer
+        semester:
+          type: integer
+        schedule:
+          type: string
+        course:
+          type: object
+          properties:
+            id:
+              type: string
+        exams:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamResponse'
+        students:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+        professors:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+
+    ExamRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        date:
+          type: string
+          format: date-time
+        weight:
+          type: number
+
+    ExamResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        date:
+          type: string
+          format: date-time
+        weight:
+          type: number
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+

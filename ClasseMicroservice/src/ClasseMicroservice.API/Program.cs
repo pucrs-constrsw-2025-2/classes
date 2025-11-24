@@ -220,7 +220,7 @@ builder.Services.AddOpenTelemetry()
 var app = builder.Build();
 
 // Expose Prometheus metrics
-app.UseOpenTelemetryPrometheusScrapingEndpoint();
+app.UseOpenTelemetryPrometheusScrapingEndpoint("/api/v1/metrics");
 
 // Pipeline
 // Lê EnableSwagger da configuração ou da variável de ambiente PROVIDA (ENABLE_SWAGGER)
@@ -270,7 +270,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Health check endpoint padronizado (formato compatível com Actuator)
-app.MapHealthChecks("/health", new HealthCheckOptions
+app.MapHealthChecks("/api/v1/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
     {
